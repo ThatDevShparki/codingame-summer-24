@@ -65,11 +65,19 @@ class GameState:
     def get_player_pos_stun_for_game(self, game_idx: int) -> tuple[int, int]:
         return self.registers[game_idx].get_pos_and_stun_for_player(self.player_idx)
 
-    def get_map_for_game(self, game_idx: int) -> list[bool]:
-        _map = self.registers[game_idx].gpu.split()
+    def get_map_for_game(self, game_idx: int) -> list[int]:
+        debug(self.registers[game_idx].gpu)
+        _map = self.registers[game_idx].gpu
         if game_idx == 0:
-            return [True if c == "." else False for c in _map]
+            return [1 if c == "." else 0 for c in _map]
         return []
+
+    def get_map_tail_for_game_and_player(self, game_idx: int) -> list[int]:
+        _pos, _ = self.get_player_pos_stun_for_game(game_idx)
+        _map = self.get_map_for_game(game_idx)
+        if _pos >= len(_map):
+            return []
+        return _map[_pos:]
 
     def __init__(self, player_idx: int, nb_games: int):
         self.player_idx = player_idx
@@ -119,6 +127,17 @@ class Game:
 
 
 def play(state: GameState, game_idx: int) -> Command:
+    head = state.get_map_tail_for_game_and_player(game_idx)
+
+    if len(head) >= 2 and head[0] and not head[1]:
+        return Command.UP
+
+    if len(head) >= 4 and sum(head[:4]) == 4:
+        return Command.RIGHT
+
+    if len(head) >= 3 and sum(head[:3]) == 3:
+        return Command.DOWN
+
     return Command.LEFT
 
 
