@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "codingame-summer-24"
+version = "0.1.0"
+description = ""
+authors = ["ThatDevShparki <thatdevshparki@gmail.com>"]
+packages = [{ include = "src", from = "." }]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+numpy = "^1.26.4"
+pandas = "^2.2.2"
+
+
+[tool.poetry.group.dev.dependencies]
+black = "^24.4.2"
+ruff = "^0.4.8"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
