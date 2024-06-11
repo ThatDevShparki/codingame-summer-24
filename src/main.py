@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import sys
 from enum import Enum
-from typing import Any
+from typing import Any, Callable
 
 MAX_PLAYERS = 3
 
@@ -65,6 +65,12 @@ class GameState:
     def get_player_pos_stun_for_game(self, game_idx: int) -> tuple[int, int]:
         return self.registers[game_idx].get_pos_and_stun_for_player(self.player_idx)
 
+    def get_map_for_game(self, game_idx: int) -> list[bool]:
+        _map = self.registers[game_idx].gpu.split()
+        if game_idx == 0:
+            return [True if c == "." else False for c in _map]
+        return []
+
     def __init__(self, player_idx: int, nb_games: int):
         self.player_idx = player_idx
         self.nb_games = nb_games
@@ -88,36 +94,36 @@ class Command(Enum):
 
 
 class Game:
-    state: GameState | None = None
+    state: GameState
     outputQueue: list[Command] = []
 
-    def __init__(self, state: GameState):
+    play: Callable[[GameState, int], Command]
+
+    def __init__(self, state: GameState, play: Callable[[GameState, int], Command]):
         self.state = state
+        self.play = play
 
     def tick(self):
-        if self.state is None:
-            return
-
         self.state.tick()
-        self.play()
+
+        for i in range(self.state.nb_games):
+            self.outputQueue.append(self.play(self.state, i))
 
         while self.outputQueue:
             print(self.outputQueue.pop(0).value)
 
-    def do(self, command: Command):
-        self.outputQueue.append(command)
-
-    def play(self):
-        self.do(Command.LEFT)
-
     @classmethod
-    def read(cls) -> Game:
+    def read(cls, play: Callable[[GameState, int], Command]) -> Game:
         _state = GameState.read()
-        return Game(_state)
+        return Game(_state, play)
+
+
+def play(state: GameState, game_idx: int) -> Command:
+    return Command.LEFT
 
 
 if __name__ == "__main__":
-    game = Game.read()
+    game = Game.read(play)
 
     while True:
         game.tick()
