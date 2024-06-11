@@ -14,53 +14,64 @@ def debug(*args: Any, **kwargs: Any):
     print(*args, **kwargs, file=sys.stderr)
 
 
-class Scores:
-    scores: list[int] | None = None
+class Score:
+    total: int
+    gold: int
+    silver: int
+    bronze: int
 
-    def __init__(self, scores: list[int]):
-        self.scores = scores
+    def __init__(self, total: int, gold: int, silver: int, bronze: int):
+        self.total = total
+        self.gold = gold
+        self.silver = silver
+        self.bronze = bronze
 
     @classmethod
-    def read(cls) -> Scores:
-        _scores = []
-        for _ in range(MAX_PLAYERS):
-            _values = input().split()
-            _scores.append([int(s) for s in _values])
-        return Scores(_scores)
+    def read(cls) -> Score:
+        _values = [int(s) for s in input().split()]
+        return Score(*_values)
 
 
-class GameRegister:
-    gpu: str | None = None
-    registers: list[int] | None = None
+class Register:
+    gpu: str
+    registers: list[int]
 
     def __init__(self, gpu: str, registers: list[int]):
         self.gpu = gpu
         self.registers = registers
 
+    def get_pos_and_stun_for_player(self, player_idx: int) -> tuple[int, int]:
+        # Returns position and stun timer
+        return (self.registers[player_idx], self.registers[player_idx + MAX_PLAYERS])
+
     @classmethod
-    def read(cls) -> GameRegister:
+    def read(cls) -> Register:
         inputs = input().split()
         _gpu = inputs[0]
         _registers = [int(s) for s in inputs[1:]]
-        return GameRegister(_gpu, _registers)
+        return Register(_gpu, _registers)
 
 
 class GameState:
-    player_idx: int | None = None
-    nb_games: int | None = None
+    player_idx: int
+    nb_games: int
 
-    scores: Scores | None = None
-    registers: list[GameRegister] | None = None
+    scores: list[Score]
+    registers: list[Register]
+
+    def get_player_score(self) -> Score:
+        return self.scores[self.player_idx]
+
+    def get_player_pos_stun_for_game(self, game_idx: int) -> tuple[int, int]:
+        return self.registers[game_idx].get_pos_and_stun_for_player(self.player_idx)
 
     def __init__(self, player_idx: int, nb_games: int):
         self.player_idx = player_idx
         self.nb_games = nb_games
 
     def tick(self):
-        self.scores = Scores.read()
-        self.registers = (
-            [GameRegister.read() for _ in range(self.nb_games)] if self.nb_games else []
-        )
+        self.scores = [Score.read() for _ in range(MAX_PLAYERS)]
+        self.registers = [Register.read() for _ in range(self.nb_games)]
 
     @classmethod
     def read(cls) -> GameState:
